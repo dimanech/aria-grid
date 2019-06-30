@@ -1,0 +1,11 @@
+[role="row"] {
+	display: flex;
+}
+
+[role="gridcell"] {
+	width: 33%;
+}
+
+:focus {
+	outline: 4px solid red;
+}

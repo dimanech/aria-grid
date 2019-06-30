@@ -1,0 +1,77 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+	<link rel="stylesheet" href="grid.css">
+</head>
+<body>
+	
+	<a href="">some</a>
+	
+	<div role="grid"
+		aria-label="Presentational grid"
+		data-wrap-cols="true"
+		data-wrap-rows="true"
+		data-presentation-cols="3"
+	>
+		<div role="row">
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				A
+			</div>
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				B
+			</div>
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				C
+			</div>
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				D
+			</div>
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				E
+			</div>
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				F
+			</div>
+		</div>
+	</div>
+	
+	<button>some</button>
+	
+	<div role="grid"
+		aria-label="Wraped grid"
+		data-wrap-cols="true"
+		data-wrap-rows="true"
+	>
+		<div role="row">
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				A
+			</div>
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				B
+			</div>
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				C
+			</div>
+		</div>
+		<div role="row">
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				D
+			</div>
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				E
+			</div>
+			<div role="gridcell" aria-colindex="1" tabindex="-1">
+				F
+			</div>
+		</div>
+	</div>
+	
+    <script type="module">
+        import Grid from './Grid.js';
+        document.querySelectorAll('[role=grid]').forEach(grid => new Grid(grid).init());
+    </script>
+</body>
+</html>
