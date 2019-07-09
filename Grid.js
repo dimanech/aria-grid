@@ -95,9 +95,11 @@ export default class Grid {
 		let moveToColumn = column;
 
 		switch (this.rowsBounds) {
-			//case 'wrap':
-			//	moveToColumn = this.rowLoop(row, this.grid[this.currentRow]);
-			//	break;
+			case 'wrap':
+				const wrap = this.rowWrap(column, row);
+				moveToColumn = wrap.moveToColumn;
+				moveToRow = wrap.moveToRow;
+				break;
 			case 'loop':
 				moveToRow = this.rowLoop(row);
 				break;
@@ -106,9 +108,11 @@ export default class Grid {
 		}
 
 		switch (this.colsBounds) {
-			//case 'wrap':
-			//	moveToColumn = this.columnLoop(column, this.grid[this.currentRow]);
-			//	break;
+			case 'wrap':
+				const wrap = this.columnWrap(column, row);
+				moveToColumn = wrap.moveToColumn;
+				moveToRow = wrap.moveToRow;
+				break;
 			case 'loop':
 				moveToColumn = this.columnLoop(column, this.grid[this.currentRow]);
 				break;
@@ -147,15 +151,26 @@ export default class Grid {
 		return row;
 	}
 
-	//rowWrap(row, column) {
-	//	let focusRow = row;
-	//	let focusCol = column;
-	//
-	//	focusRow = this.rowLoop(row + 1);
-	//	focusCol = this.columnLoop(column, focusRow);
-	//
-	//	return { focusRow, focusCol };
-	//}
+	rowWrap(column, row) {
+		const colsLength = this.grid[row].length - 1;
+
+		if (column < 0) {
+			return {
+				moveToColumn: this.columnLoop(column),
+				moveToRow: this.rowLoop(row - 1)
+			};
+		} else if (column > colsLength) {
+			return {
+				moveToColumn: this.columnLoop(column),
+				moveToRow: this.rowLoop(row + 1)
+			};
+		}
+
+		return {
+			moveToColumn: column,
+			moveToRow: row
+		};
+	}
 
 	columnStop(column) {
 		const colsLength = this.grid[this.currentRow].length - 1;
@@ -169,8 +184,8 @@ export default class Grid {
 		return column;
 	}
 
-	columnLoop(column, row) {
-		const colsLength = row.length - 1;
+	columnLoop(column) {
+		const colsLength = this.grid[this.currentRow].length - 1;
 
 		if (column < 0) {
 			return colsLength;
@@ -181,15 +196,26 @@ export default class Grid {
 		return column;
 	}
 
-	//columnWrap(column, row) {
-	//	let focusRow = row;
-	//	let focusCol = column;
-	//
-	//	focusRow = this.rowLoop(row + 1);
-	//	focusCol = this.columnLoop(column, focusRow);
-	//
-	//	return { focusRow, focusCol };
-	//}
+	columnWrap(column, row) {
+		const rowLength = this.grid.length - 1;
+
+		if (row < 0) {
+			return {
+				moveToColumn: this.columnLoop(column - 1),
+				moveToRow: this.rowLoop(row)
+			};
+		} else if (row > rowLength) {
+			return {
+				moveToColumn: this.columnLoop(column + 1),
+				moveToRow: this.rowLoop(row)
+			};
+		}
+
+		return {
+			moveToColumn: column,
+			moveToRow: row
+		};
+	}
 
 	static focusCell(domNode) {
 		domNode.setAttribute('tabindex', '0');
@@ -235,6 +261,8 @@ export default class Grid {
 				grid.push(cells);
 			}
 		});
+
+		console.log(grid)
 
 		return grid;
 	}
