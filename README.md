@@ -1,17 +1,14 @@
-# ARIA FocusHighlighter
+# aria-grid
 
-Highlight focus only in case where user use keyboard. So you could hide all `:focus` state for regular user.
+WAI ARIA 1.1 conf implementation of "Layout Grid" pattern.
 
-0-dependency, vanilla JS, development oriented module.
+## Specs
 
-This module designed as development component, not as copy-and-past module, so you should init it in you
-project in you own way and use as extend point. It is not "just add water" component.
+http://w3c.github.io/aria-practices/#grid
 
-## Initialization
+https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/Row_Role
 
-You could initialize this component in this way:
+###
 
-```js
-const FocusHighlighter = require('FocusHighlighter');
-new FocusHighlighter(document.querySelector('[data-js-highlighter]')).init();
-```
+This is just progressive enhancement so we use `data-roving-tab-target` to convert item to `tabinde="-1"`
+

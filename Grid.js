@@ -1,9 +1,6 @@
 export default class Grid {
 	constructor(domNode) {
 		this.domNode = domNode;
-		this.wrapRows = this.getSetting('data-wrap-rows') || false;
-		this.wrapCols = this.getSetting('data-wrap-cols') || false;
-
 		this.grid = [];
 		this.currentRow = 0;
 		this.currentColumn = 0;
@@ -24,6 +21,7 @@ export default class Grid {
 
 	init() {
 		this.grid = this.setUpGridModel();
+		this.setUpBoundariesBehavior();
 		this.addEventListeners();
 		this.grid[0][0].setAttribute('tabindex', '0');
 	}
@@ -94,49 +92,111 @@ export default class Grid {
 
 	moveFocusTo(row, column) {
 		let moveToRow = row;
-		let moveToCol = column;
+		let moveToColumn = column;
 
-		if (this.wrapRows) {
-			if (row < 0) {
-				moveToRow = this.grid.length - 1;
-			} else if (row > this.grid.length - 1) {
-				moveToRow = 0;
-			}
-		} else {
-			if (row < 0) {
-				moveToRow = 0;
-			} else if (row > this.grid.length - 1) {
-				moveToRow = this.grid.length - 1;
-			}
+		switch (this.rowsBounds) {
+			//case 'wrap':
+			//	moveToColumn = this.rowLoop(row, this.grid[this.currentRow]);
+			//	break;
+			case 'loop':
+				moveToRow = this.rowLoop(row);
+				break;
+			default:
+				moveToRow = this.rowStop(row);
 		}
 
-		if (this.wrapCols) {
-			if (column < 0) {
-				moveToCol = this.grid[this.currentRow].length - 1;
-			} else if (column > this.grid[this.currentRow].length - 1) {
-				moveToCol = 0;
-			}
-		} else {
-			if (column < 0) {
-				moveToCol = 0;
-			} else if (column > this.grid[this.currentRow].length - 1) {
-				moveToCol = this.grid[this.currentRow].length - 1;
-			}
+		switch (this.colsBounds) {
+			//case 'wrap':
+			//	moveToColumn = this.columnLoop(column, this.grid[this.currentRow]);
+			//	break;
+			case 'loop':
+				moveToColumn = this.columnLoop(column, this.grid[this.currentRow]);
+				break;
+			default:
+				moveToColumn = this.columnStop(column);
 		}
 
-		this.focusCell(this.grid[moveToRow][moveToCol]);
-		this.blurCell(this.grid[this.currentRow][this.currentColumn]);
+		Grid.blurCell(this.grid[this.currentRow][this.currentColumn]);
+		Grid.focusCell(this.grid[moveToRow][moveToColumn]);
 
 		this.currentRow = moveToRow;
-		this.currentColumn = moveToCol;
+		this.currentColumn = moveToColumn;
 	}
 
-	focusCell(domNode) {
+	rowStop(row) {
+		const rowLength = this.grid.length - 1;
+
+		if (row < 0) {
+			return 0;
+		} else if (row > rowLength) {
+			return rowLength;
+		}
+
+		return row;
+	}
+
+	rowLoop(row) {
+		const rowLength = this.grid.length - 1;
+
+		if (row < 0) {
+			return rowLength;
+		} else if (row > rowLength) {
+			return 0;
+		}
+
+		return row;
+	}
+
+	//rowWrap(row, column) {
+	//	let focusRow = row;
+	//	let focusCol = column;
+	//
+	//	focusRow = this.rowLoop(row + 1);
+	//	focusCol = this.columnLoop(column, focusRow);
+	//
+	//	return { focusRow, focusCol };
+	//}
+
+	columnStop(column) {
+		const colsLength = this.grid[this.currentRow].length - 1;
+
+		if (column < 0) {
+			return 0;
+		} else if (column > colsLength) {
+			return colsLength;
+		}
+
+		return column;
+	}
+
+	columnLoop(column, row) {
+		const colsLength = row.length - 1;
+
+		if (column < 0) {
+			return colsLength;
+		} else if (column > colsLength) {
+			return 0;
+		}
+
+		return column;
+	}
+
+	//columnWrap(column, row) {
+	//	let focusRow = row;
+	//	let focusCol = column;
+	//
+	//	focusRow = this.rowLoop(row + 1);
+	//	focusCol = this.columnLoop(column, focusRow);
+	//
+	//	return { focusRow, focusCol };
+	//}
+
+	static focusCell(domNode) {
 		domNode.setAttribute('tabindex', '0');
 		domNode.focus();
 	}
 
-	blurCell(domNode) {
+	static blurCell(domNode) {
 		domNode.setAttribute('tabindex', '-1');
 	}
 
@@ -153,17 +213,19 @@ export default class Grid {
 	setUpGridModel() {
 		const grid = [];
 
+		// Make model with inactive cells
 		this.domNode.querySelectorAll('[role=row]').forEach(row => {
 			const cells = [];
 
 			row.querySelectorAll('[role=gridcell]').forEach(cell => {
 				// check if cell is not hidden
-				if (cell.hasAttribute('tabindex')) {
+				if (cell.hasAttribute('data-roving-tab-target') || cell.hasAttribute('tabindex')) {
+					cell.tabIndex = -1;
 					cells.push(cell);
 				} else {
-					const focusableCell = cell.querySelector('[tabindex]');
-
+					const focusableCell = cell.querySelector('[tabindex], [data-roving-tab-target]');
 					if (focusableCell) {
+						focusableCell.tabIndex = -1;
 						cells.push(focusableCell);
 					}
 				}
@@ -177,13 +239,45 @@ export default class Grid {
 		return grid;
 	}
 
-	getSetting(attrName) {
+	setUpBoundariesBehavior() {
+		this.wrapRows = this.getSettingAttributeValue('data-wrap-rows');
+		this.wrapCols = this.getSettingAttributeValue('data-wrap-cols');
+		this.loopRows = this.getSettingAttributeValue('data-loop-rows');
+		this.loopCols = this.getSettingAttributeValue('data-loop-cols');
+
+		switch (true) {
+			case this.wrapRows:
+				this.rowsBounds = 'wrap';
+				break;
+			case this.loopRows:
+				this.rowsBounds = 'loop';
+				break;
+			default:
+				this.rowsBounds = 'stop';
+		}
+
+		switch (true) {
+			case this.wrapCols:
+				this.colsBounds = 'wrap';
+				break;
+			case this.loopCols:
+				this.colsBounds = 'loop';
+				break;
+			default:
+				this.colsBounds = 'stop';
+		}
+	}
+
+	getSettingAttributeValue(attrName) {
 		const attr = this.domNode.getAttribute(attrName);
-		return attr && attr === 'true';
+		return attr && attr !== 'false';
 	}
 
 	destroy() {
 		this.domNode.removeEventListener('keydown', this.handleKeydown);
 		this.domNode.removeEventListener('click', this.handleClick);
+		this.domNode.querySelectorAll('[data-roving-tab-target]').forEach(item => {
+			item.tabIndex = 0;
+		});
 	}
 }
