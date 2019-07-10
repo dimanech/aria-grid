@@ -26,6 +26,11 @@ export default class Grid {
 		this.grid[0][0].setAttribute('tabindex', '0');
 	}
 
+	reinit() {
+		this.grid = this.setUpGridModel();
+		this.grid[0][0].setAttribute('tabindex', '0');
+	}
+
 	addEventListeners() {
 		this.handleKeydown = this.handleKeydown.bind(this);
 		this.handleClick = this.handleClick.bind(this);
@@ -261,8 +266,6 @@ export default class Grid {
 				grid.push(cells);
 			}
 		});
-
-		console.log(grid)
 
 		return grid;
 	}
