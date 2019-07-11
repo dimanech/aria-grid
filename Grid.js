@@ -96,15 +96,12 @@ export default class Grid {
 	}
 
 	moveFocusTo(row, column) {
+		// This is bounds logic if all ok we just move focus to requested X:Y
 		let moveToRow = row;
 		let moveToColumn = column;
 
+		// Lets handle default behaviour until altering is required
 		switch (this.rowsBounds) {
-			case 'wrap':
-				const wrap = this.rowWrap(column, row);
-				moveToColumn = wrap.moveToColumn;
-				moveToRow = wrap.moveToRow;
-				break;
 			case 'loop':
 				moveToRow = this.rowLoop(row);
 				break;
@@ -113,16 +110,30 @@ export default class Grid {
 		}
 
 		switch (this.colsBounds) {
-			case 'wrap':
-				const wrap = this.columnWrap(column, row);
-				moveToColumn = wrap.moveToColumn;
-				moveToRow = wrap.moveToRow;
-				break;
 			case 'loop':
-				moveToColumn = this.columnLoop(column, this.grid[this.currentRow]);
+				moveToColumn = this.columnLoop(column);
 				break;
 			default:
 				moveToColumn = this.columnStop(column);
+		}
+
+		// Altering requested position if Wrap options is enabled
+		if (this.rowsBounds === 'wrap') {
+			// if this last column in row move to the next row
+			const alteredControl = this.rowWrap(column, row);
+			if (alteredControl) {
+				moveToColumn = alteredControl.alteredCol;
+				moveToRow = alteredControl.alteredRow;
+			}
+		}
+
+		if (this.colsBounds === 'wrap') {
+			// if this row is last move to the first row and next column
+			const alteredControl = this.columnWrap(column, row);
+			if (alteredControl) {
+				moveToColumn = alteredControl.alteredCol;
+				moveToRow = alteredControl.alteredRow;
+			}
 		}
 
 		Grid.blurCell(this.grid[this.currentRow][this.currentColumn]);
@@ -157,24 +168,21 @@ export default class Grid {
 	}
 
 	rowWrap(column, row) {
-		const colsLength = this.grid[row].length - 1;
+		const colsTotal = this.grid[this.currentRow].length - 1;
 
 		if (column < 0) {
 			return {
-				moveToColumn: this.columnLoop(column),
-				moveToRow: this.rowLoop(row - 1)
+				alteredRow: this.rowLoop(row - 1),
+				alteredCol: this.columnLoop(column)
 			};
-		} else if (column > colsLength) {
+		} else if (column > colsTotal) {
 			return {
-				moveToColumn: this.columnLoop(column),
-				moveToRow: this.rowLoop(row + 1)
+				alteredRow: this.rowLoop(row + 1),
+				alteredCol: this.columnLoop(column)
 			};
 		}
 
-		return {
-			moveToColumn: column,
-			moveToRow: row
-		};
+		return null;
 	}
 
 	columnStop(column) {
@@ -206,20 +214,17 @@ export default class Grid {
 
 		if (row < 0) {
 			return {
-				moveToColumn: this.columnLoop(column - 1),
-				moveToRow: this.rowLoop(row)
+				alteredRow: this.rowLoop(row),
+				alteredCol: this.columnLoop(column - 1)
 			};
 		} else if (row > rowLength) {
 			return {
-				moveToColumn: this.columnLoop(column + 1),
-				moveToRow: this.rowLoop(row)
+				alteredRow: this.rowLoop(row),
+				alteredCol: this.columnLoop(column + 1)
 			};
 		}
 
-		return {
-			moveToColumn: column,
-			moveToRow: row
-		};
+		return null;
 	}
 
 	static focusCell(domNode) {
