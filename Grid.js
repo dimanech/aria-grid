@@ -134,11 +134,9 @@ export default class Grid {
 			}
 		}
 
-		console.log(this.grid[moveToRow][moveToColumn])
-
-		//if (this.grid[moveToRow][moveToColumn]) {
-		//	return;
-		//}
+		if (!this.grid[moveToRow][moveToColumn]) {
+			return;
+		}
 
 		Grid.blurCell(this.grid[this.currentRow][this.currentColumn]);
 		Grid.focusCell(this.grid[moveToRow][moveToColumn]);
