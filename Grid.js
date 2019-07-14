@@ -23,18 +23,12 @@ export default class Grid {
 		this.grid = this.setUpGridModel();
 		this.setUpBoundariesBehavior();
 		this.addEventListeners();
-		const focusableCell = this.findFocusableCell(0, 0);
-		if (focusableCell) {
-			focusableCell.setAttribute('tabindex', '0');
-		}
+		this.grid[0][0].setAttribute('tabindex', '0');
 	}
 
 	reinit() {
 		this.grid = this.setUpGridModel();
-		const focusableCell = this.findFocusableCell(0, 0);
-		if (focusableCell) {
-			focusableCell.setAttribute('tabindex', '0');
-		}
+		this.grid[0][0].setAttribute('tabindex', '0');
 	}
 
 	addEventListeners() {
@@ -140,9 +134,11 @@ export default class Grid {
 			}
 		}
 
-		if (this.grid[moveToRow][moveToColumn]) {
-			return;
-		}
+		console.log(this.grid[moveToRow][moveToColumn])
+
+		//if (this.grid[moveToRow][moveToColumn]) {
+		//	return;
+		//}
 
 		Grid.blurCell(this.grid[this.currentRow][this.currentColumn]);
 		Grid.focusCell(this.grid[moveToRow][moveToColumn]);
@@ -235,37 +231,14 @@ export default class Grid {
 	}
 
 	static focusCell(domNode) {
-		let isCellFocusable = false;
-
-		if (domNode) {
-			domNode.setAttribute('tabindex', '0');
-			domNode.focus();
-			isCellFocusable = true;
-		}
-
-		return isCellFocusable;
+		domNode.setAttribute('tabindex', '0');
+		domNode.focus();
 	}
 
 	static blurCell(domNode) {
 		if (domNode) {
 			domNode.setAttribute('tabindex', '-1');
 		}
-	}
-
-	findFocusableCell(row, cell) {
-		const currentRow = this.grid[row];
-		let colIndex = cell;
-		let iteration = 0;
-
-		while (iteration < currentRow.length) {
-			if (currentRow[colIndex] !== null) {
-				return currentRow[colIndex];
-			}
-			colIndex = (colIndex + 1) % currentRow.length; // loop searching
-			iteration++;
-		}
-
-		return null;
 	}
 
 	findNodeInGrid(domNode) {
@@ -284,10 +257,8 @@ export default class Grid {
 		this.domNode.querySelectorAll('[role=row]').forEach(row => {
 			const cells = [];
 
-			for (let cell of row.children) {
-				if (!this.isNodeVisible(cell)) {
-					continue;
-				}
+			row.querySelectorAll('[role=gridcell]').forEach(cell => {
+				// check if cell is not hidden
 				if (cell.hasAttribute('data-roving-tab-target') || cell.hasAttribute('tabindex')) {
 					cell.tabIndex = -1;
 					cells.push(cell);
@@ -296,18 +267,14 @@ export default class Grid {
 					if (focusableCell) {
 						focusableCell.tabIndex = -1;
 						cells.push(focusableCell);
-					} else {
-						cells.push(null);
 					}
 				}
-			}
+			});
 
 			if (cells.length) {
 				grid.push(cells);
 			}
 		});
-
-		console.log(grid);
 
 		return grid;
 	}
@@ -344,10 +311,6 @@ export default class Grid {
 	getSettingAttributeValue(attrName) {
 		const attr = this.domNode.getAttribute(attrName);
 		return attr && attr !== 'false';
-	}
-
-	isNodeVisible(domNode) {
-		return !!(domNode.offsetWidth || domNode.offsetHeight || domNode.getClientRects().length);
 	}
 
 	destroy() {
