@@ -64,6 +64,8 @@
 .calendar > div > div {
 	border: 1px solid;
 	display: table-cell;
+	text-align: center;
+	width: 20px;
 }
 
 .calendar [role="presentation"] {

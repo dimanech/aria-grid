@@ -23,12 +23,18 @@ export default class Grid {
 		this.grid = this.setUpGridModel();
 		this.setUpBoundariesBehavior();
 		this.addEventListeners();
-		this.grid[0][0].setAttribute('tabindex', '0');
+		const focusableCell = this.findFocusableCell(0, 0);
+		if (focusableCell) {
+			focusableCell.setAttribute('tabindex', '0');
+		}
 	}
 
 	reinit() {
 		this.grid = this.setUpGridModel();
-		this.grid[0][0].setAttribute('tabindex', '0');
+		const focusableCell = this.findFocusableCell(0, 0);
+		if (focusableCell) {
+			focusableCell.setAttribute('tabindex', '0');
+		}
 	}
 
 	addEventListeners() {
@@ -92,7 +98,9 @@ export default class Grid {
 	handleClick() {
 		let cell;
 		cell = this.findNodeInGrid(document.activeElement); // Chrome focus gridcell even if it has tabindex=-1
-		this.moveFocusTo(cell.row, cell.col);
+		if (cell) {
+			this.moveFocusTo(cell.row, cell.col);
+		}
 	}
 
 	moveFocusTo(row, column) {
@@ -101,23 +109,19 @@ export default class Grid {
 		let moveToColumn = column;
 
 		// Lets handle default behaviour until altering is required
-		switch (this.rowsBounds) {
-			case 'loop':
-				moveToRow = this.rowLoop(row);
-				break;
-			default:
-				moveToRow = this.rowStop(row);
+		if (this.rowsBounds === 'loop') {
+			moveToRow = this.rowLoop(row);
+		} else {
+			moveToRow = this.rowStop(row);
 		}
 
-		switch (this.colsBounds) {
-			case 'loop':
-				moveToColumn = this.columnLoop(column);
-				break;
-			default:
-				moveToColumn = this.columnStop(column);
+		if (this.colsBounds === 'loop') {
+			moveToColumn = this.columnLoop(column);
+		} else {
+			moveToColumn = this.columnStop(column);
 		}
 
-		// Altering requested position if Wrap options is enabled
+		// Altering requested position if Wrap options is enabled and we in bounds case
 		if (this.rowsBounds === 'wrap') {
 			// if this last column in row move to the next row
 			const alteredControl = this.rowWrap(column, row);
@@ -136,9 +140,12 @@ export default class Grid {
 			}
 		}
 
+		if (this.grid[moveToRow][moveToColumn]) {
+			return;
+		}
+
 		Grid.blurCell(this.grid[this.currentRow][this.currentColumn]);
 		Grid.focusCell(this.grid[moveToRow][moveToColumn]);
-
 		this.currentRow = moveToRow;
 		this.currentColumn = moveToColumn;
 	}
@@ -228,12 +235,37 @@ export default class Grid {
 	}
 
 	static focusCell(domNode) {
-		domNode.setAttribute('tabindex', '0');
-		domNode.focus();
+		let isCellFocusable = false;
+
+		if (domNode) {
+			domNode.setAttribute('tabindex', '0');
+			domNode.focus();
+			isCellFocusable = true;
+		}
+
+		return isCellFocusable;
 	}
 
 	static blurCell(domNode) {
-		domNode.setAttribute('tabindex', '-1');
+		if (domNode) {
+			domNode.setAttribute('tabindex', '-1');
+		}
+	}
+
+	findFocusableCell(row, cell) {
+		const currentRow = this.grid[row];
+		let colIndex = cell;
+		let iteration = 0;
+
+		while (iteration < currentRow.length) {
+			if (currentRow[colIndex] !== null) {
+				return currentRow[colIndex];
+			}
+			colIndex = (colIndex + 1) % currentRow.length; // loop searching
+			iteration++;
+		}
+
+		return null;
 	}
 
 	findNodeInGrid(domNode) {
@@ -249,12 +281,13 @@ export default class Grid {
 	setUpGridModel() {
 		const grid = [];
 
-		// Make model with inactive cells
 		this.domNode.querySelectorAll('[role=row]').forEach(row => {
 			const cells = [];
 
-			row.querySelectorAll('[role=gridcell]').forEach(cell => {
-				// check if cell is not hidden
+			for (let cell of row.children) {
+				if (!this.isNodeVisible(cell)) {
+					continue;
+				}
 				if (cell.hasAttribute('data-roving-tab-target') || cell.hasAttribute('tabindex')) {
 					cell.tabIndex = -1;
 					cells.push(cell);
@@ -263,14 +296,18 @@ export default class Grid {
 					if (focusableCell) {
 						focusableCell.tabIndex = -1;
 						cells.push(focusableCell);
+					} else {
+						cells.push(null);
 					}
 				}
-			});
+			}
 
 			if (cells.length) {
 				grid.push(cells);
 			}
 		});
+
+		console.log(grid);
 
 		return grid;
 	}
@@ -307,6 +344,10 @@ export default class Grid {
 	getSettingAttributeValue(attrName) {
 		const attr = this.domNode.getAttribute(attrName);
 		return attr && attr !== 'false';
+	}
+
+	isNodeVisible(domNode) {
+		return !!(domNode.offsetWidth || domNode.offsetHeight || domNode.getClientRects().length);
 	}
 
 	destroy() {
